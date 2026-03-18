@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DiagramState, StringState } from '../../types/chord'
 import { detectChord } from '../../utils/chordDetection'
-import { FRET_COUNT } from '../../utils/noteUtils'
+import { FRET_COUNT, TUNING_PITCH_CLASSES, getNote } from '../../utils/noteUtils'
 import { Fretboard } from './Fretboard'
 import { StringHeader } from './StringHeader'
 import { ChordInfo } from '../ChordInfo'
@@ -9,7 +9,11 @@ import { ChordInfo } from '../ChordInfo'
 const INITIAL_STATE: DiagramState = ['open', 'open', 'open', 'open', 'open', 'open']
 const MAX_FRET = 24
 
-export function ChordDiagram() {
+interface ChordDiagramProps {
+  debugMode?: boolean
+}
+
+export function ChordDiagram({ debugMode = false }: ChordDiagramProps) {
   const [strings, setStrings] = useState<DiagramState>(INITIAL_STATE)
   const [startFret, setStartFret] = useState(1)
   const [selectedChord, setSelectedChord] = useState<string>('')
@@ -47,6 +51,12 @@ export function ChordDiagram() {
     typeof s === 'number' ? 'open' : s
   )
 
+  const debugNotes = strings.map((s, i) => {
+    if (s === 'muted') return '✕'
+    const fret = s === 'open' ? 0 : s
+    return getNote(i, fret)
+  })
+
   return (
     <div className="chord-diagram">
       <ChordInfo
@@ -54,7 +64,11 @@ export function ChordDiagram() {
         selectedChord={selectedChord}
         onSelectChord={setSelectedChord}
       />
-      <StringHeader strings={headerStates} onToggle={handleHeaderToggle} />
+      <StringHeader
+        strings={headerStates}
+        onToggle={handleHeaderToggle}
+        tuning={TUNING_PITCH_CLASSES}
+      />
       <div className="fretboard-row">
         <button
           className="fret-nav-btn"
@@ -78,6 +92,13 @@ export function ChordDiagram() {
           ▼
         </button>
       </div>
+      {debugMode && (
+        <div className="debug-notes-row">
+          {debugNotes.map((note, i) => (
+            <div key={i} className="debug-note-cell">{note}</div>
+          ))}
+        </div>
+      )}
       <button className="reset-button" onClick={handleReset}>
         Reset
       </button>

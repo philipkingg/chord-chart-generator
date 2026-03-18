@@ -50,6 +50,34 @@ body {
   text-transform: uppercase;
 }
 
+.debug-btn {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  z-index: 10;
+}
+
+.debug-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.debug-btn.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
 .app-main {
   flex: 1;
   display: flex;
@@ -122,6 +150,32 @@ body {
 }
 
 /* ── String Header ───────────────────────────────────── */
+.string-header-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.string-tuning-row {
+  display: flex;
+  width: 216px;
+}
+
+.string-tuning-cell {
+  width: 36px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
 .string-header {
   display: flex;
   width: 216px; /* 6 × 36px */
@@ -205,6 +259,28 @@ body {
 .fretboard-svg {
   display: block;
   border-radius: 0 0 4px 4px;
+}
+
+/* ── Debug Notes Row ─────────────────────────────────── */
+.debug-notes-row {
+  display: flex;
+  width: 216px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  padding: 4px 0;
+}
+
+.debug-note-cell {
+  width: 36px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: var(--text-muted);
+  user-select: none;
 }
 
 /* ── Reset Button ────────────────────────────────────── */

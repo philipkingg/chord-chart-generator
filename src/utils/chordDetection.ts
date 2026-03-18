@@ -1,15 +1,20 @@
 import { Chord } from 'tonal'
 import { DiagramState, ChordDetectionResult } from '../types/chord'
-import { getSoundingPitchClasses } from './noteUtils'
+import { getSoundingNotes } from './noteUtils'
 
 /**
- * Formats a chord name: strips slash bass note, lowercases root for minor chords.
- * Major stays capital (e.g. "G", "Cmaj7"), minor becomes lowercase root (e.g. "am", "bm7").
+ * Formats a chord name: strips slash bass note, strips trailing M for plain major,
+ * lowercases root for minor chords.
+ * e.g. "GM" → "G", "Gmaj7" → "Gmaj7", "Am" → "am", "Bm7" → "bm7"
  */
 function formatChordName(name: string): string {
   const baseName = name.split('/')[0]
   const chord = Chord.get(baseName)
   if (!chord.tonic) return baseName
+
+  if (chord.quality === 'Major' && chord.type === 'major') {
+    return chord.tonic
+  }
   if (chord.quality === 'Minor') {
     return baseName.replace(chord.tonic, chord.tonic.toLowerCase())
   }
@@ -21,15 +26,15 @@ function formatChordName(name: string): string {
  * Returns a ranked, deduplicated list of formatted chord names.
  */
 export function detectChord(state: DiagramState): ChordDetectionResult {
-  const pitchClasses = getSoundingPitchClasses(state)
+  const notes = getSoundingNotes(state)
 
-  if (pitchClasses.length < 2) {
+  if (notes.length < 2) {
     return { chords: [] }
   }
 
   const seen = new Set<string>()
   const chords: string[] = []
-  for (const name of Chord.detect(pitchClasses)) {
+  for (const name of Chord.detect(notes)) {
     const formatted = formatChordName(name)
     if (!seen.has(formatted)) {
       seen.add(formatted)
