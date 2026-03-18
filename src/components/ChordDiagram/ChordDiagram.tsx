@@ -11,9 +11,10 @@ const MAX_FRET = 24
 
 interface ChordDiagramProps {
   debugMode?: boolean
+  onDebugToggle?: () => void
 }
 
-export function ChordDiagram({ debugMode = false }: ChordDiagramProps) {
+export function ChordDiagram({ debugMode = false, onDebugToggle }: ChordDiagramProps) {
   const [strings, setStrings] = useState<DiagramState>(INITIAL_STATE)
   const [startFret, setStartFret] = useState(1)
   const [selectedChord, setSelectedChord] = useState<string>('')
@@ -99,9 +100,18 @@ export function ChordDiagram({ debugMode = false }: ChordDiagramProps) {
           ))}
         </div>
       )}
-      <button className="reset-button" onClick={handleReset}>
-        Reset
-      </button>
+      <div className="diagram-controls">
+        <button className="reset-button" onClick={handleReset}>Reset</button>
+        {onDebugToggle && (
+          <button
+            className={`debug-btn${debugMode ? ' active' : ''}`}
+            onClick={onDebugToggle}
+            aria-pressed={debugMode}
+          >
+            debug
+          </button>
+        )}
+      </div>
     </div>
   )
 }

@@ -22,8 +22,36 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
   const svgWidth = cellWidth * STRING_COUNT
   const svgHeight = nutHeight + cellHeight * FRET_COUNT
 
-  // Show fret position label if not starting at fret 1
   const showFretLabel = startFret > 1
+
+  // Compute barre bars: contiguous runs of 2+ strings at the same fret (visible in window)
+  const byFret = new Map<number, number[]>()
+  strings.forEach((s, i) => {
+    if (typeof s !== 'number') return
+    const offset = s - startFret
+    if (offset < 0 || offset >= FRET_COUNT) return
+    const arr = byFret.get(s) ?? []
+    arr.push(i)
+    byFret.set(s, arr)
+  })
+
+  const bars: { stringStart: number; stringEnd: number; fretOffset: number }[] = []
+  for (const [fret, indices] of byFret) {
+    if (indices.length < 2) continue
+    const sorted = [...indices].sort((a, b) => a - b)
+    let runStart = sorted[0]
+    let prev = sorted[0]
+    for (let i = 1; i <= sorted.length; i++) {
+      const cur = sorted[i]
+      if (i === sorted.length || cur !== prev + 1) {
+        if (prev - runStart >= 1) {
+          bars.push({ stringStart: runStart, stringEnd: prev, fretOffset: fret - startFret })
+        }
+        runStart = cur
+      }
+      prev = cur
+    }
+  }
 
   return (
     <div className="fretboard-container">
@@ -37,7 +65,7 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
         aria-label="Guitar fretboard"
       >
         {/* Nut */}
-        <rect x={0} y={0} width={svgWidth} height={nutHeight} fill="#1a1a1a" />
+        <rect x={0} y={0} width={svgWidth} height={nutHeight} fill="#c8a35e" />
 
         {/* Fret lines */}
         {Array.from({ length: FRET_COUNT + 1 }, (_, fretIndex) => (
@@ -47,7 +75,7 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
             y1={nutHeight + fretIndex * cellHeight}
             x2={svgWidth}
             y2={nutHeight + fretIndex * cellHeight}
-            stroke="#333"
+            stroke="#1c1c22"
             strokeWidth={1}
           />
         ))}
@@ -60,10 +88,29 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
             y1={0}
             x2={cellWidth * stringIndex + cellWidth / 2}
             y2={svgHeight}
-            stroke="#666"
+            stroke="#36363e"
             strokeWidth={1.5}
           />
         ))}
+
+        {/* Barre bars (rendered before dots so dots sit on top) */}
+        {bars.map(({ stringStart, stringEnd, fretOffset }) => {
+          const cy = nutHeight + fretOffset * cellHeight + cellHeight / 2
+          const x1 = cellWidth * stringStart + cellWidth / 2
+          const x2 = cellWidth * stringEnd + cellWidth / 2
+          return (
+            <rect
+              key={`bar-${stringStart}-${stringEnd}-${fretOffset}`}
+              x={x1 - dotRadius}
+              y={cy - dotRadius}
+              width={x2 - x1 + dotRadius * 2}
+              height={dotRadius * 2}
+              rx={dotRadius}
+              ry={dotRadius}
+              fill="#e2e2de"
+            />
+          )
+        })}
 
         {/* Clickable cells + finger dots */}
         {Array.from({ length: FRET_COUNT }, (_, fretOffset) => {
@@ -99,7 +146,7 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
                     cx={cx}
                     cy={cy}
                     r={dotRadius}
-                    fill="#1a1a1a"
+                    fill="#e2e2de"
                   />
                 )}
               </g>
