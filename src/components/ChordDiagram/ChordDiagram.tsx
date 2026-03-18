@@ -2,12 +2,35 @@ import { useState, useEffect } from 'react'
 import { DiagramState, StringState } from '../../types/chord'
 import { detectChord } from '../../utils/chordDetection'
 import { FRET_COUNT, TUNING_PITCH_CLASSES, getNote } from '../../utils/noteUtils'
+import { exportChordDiagram } from '../../utils/exportPng'
 import { Fretboard } from './Fretboard'
 import { StringHeader } from './StringHeader'
 import { ChordInfo } from '../ChordInfo'
 
 const INITIAL_STATE: DiagramState = ['open', 'open', 'open', 'open', 'open', 'open']
 const MAX_FRET = 24
+const LS_STATE_KEY = 'tabby_chord_state'
+const LS_FRET_KEY = 'tabby_start_fret'
+
+function loadState(): DiagramState {
+  try {
+    const raw = localStorage.getItem(LS_STATE_KEY)
+    if (!raw) return INITIAL_STATE
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed) || parsed.length !== 6) return INITIAL_STATE
+    const valid = parsed.every((s: unknown) => s === 'muted' || s === 'open' || typeof s === 'number')
+    return valid ? (parsed as DiagramState) : INITIAL_STATE
+  } catch { return INITIAL_STATE }
+}
+
+function loadStartFret(): number {
+  try {
+    const raw = localStorage.getItem(LS_FRET_KEY)
+    if (!raw) return 1
+    const n = parseInt(raw, 10)
+    return isNaN(n) || n < 1 ? 1 : n
+  } catch { return 1 }
+}
 
 interface ChordDiagramProps {
   debugMode?: boolean
@@ -15,16 +38,21 @@ interface ChordDiagramProps {
 }
 
 export function ChordDiagram({ debugMode = false, onDebugToggle }: ChordDiagramProps) {
-  const [strings, setStrings] = useState<DiagramState>(INITIAL_STATE)
-  const [startFret, setStartFret] = useState(1)
-  const [selectedChord, setSelectedChord] = useState<string>('')
-  const [chords, setChords] = useState<string[]>([])
+  const [strings, setStrings] = useState<DiagramState>(loadState)
+  const [startFret, setStartFret] = useState(loadStartFret)
+  const [chords, setChords] = useState<string[]>(() => detectChord(loadState()).chords)
+  const [selectedChord, setSelectedChord] = useState<string>(() => detectChord(loadState()).chords[0] ?? '')
 
   useEffect(() => {
     const result = detectChord(strings)
     setChords(result.chords)
     setSelectedChord(result.chords[0] ?? '')
   }, [strings])
+
+  useEffect(() => {
+    localStorage.setItem(LS_STATE_KEY, JSON.stringify(strings))
+    localStorage.setItem(LS_FRET_KEY, String(startFret))
+  }, [strings, startFret])
 
   function handleFretClick(stringIndex: number, fret: number) {
     setStrings((prev) => {
@@ -46,6 +74,8 @@ export function ChordDiagram({ debugMode = false, onDebugToggle }: ChordDiagramP
   function handleReset() {
     setStrings(INITIAL_STATE)
     setStartFret(1)
+    localStorage.removeItem(LS_STATE_KEY)
+    localStorage.removeItem(LS_FRET_KEY)
   }
 
   const headerStates: StringState[] = strings.map((s) =>
@@ -102,6 +132,12 @@ export function ChordDiagram({ debugMode = false, onDebugToggle }: ChordDiagramP
       )}
       <div className="diagram-controls">
         <button className="reset-button" onClick={handleReset}>Reset</button>
+        <button
+          className="save-btn"
+          onClick={() => exportChordDiagram(strings, startFret, selectedChord)}
+        >
+          Save PNG
+        </button>
         {onDebugToggle && (
           <button
             className={`debug-btn${debugMode ? ' active' : ''}`}
