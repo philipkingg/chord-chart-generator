@@ -14,10 +14,10 @@ interface FretboardProps {
  */
 export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
   const STRING_COUNT = 6
-  const cellWidth = 48
+  const cellWidth = 36
   const cellHeight = 44
   const nutHeight = 6
-  const dotRadius = 14
+  const dotRadius = 11
 
   const svgWidth = cellWidth * STRING_COUNT
   const svgHeight = nutHeight + cellHeight * FRET_COUNT

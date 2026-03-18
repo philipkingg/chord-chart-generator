@@ -124,11 +124,11 @@ body {
 /* ── String Header ───────────────────────────────────── */
 .string-header {
   display: flex;
-  width: 288px; /* 6 × 48px */
+  width: 216px; /* 6 × 36px */
 }
 
 .string-header-cell {
-  width: 48px;
+  width: 36px;
   height: 32px;
   display: flex;
   align-items: center;
@@ -153,6 +153,39 @@ body {
 
 .string-header-cell:hover .string-indicator {
   opacity: 0.6;
+}
+
+/* ── Fretboard row (fretboard + nav arrows) ──────────── */
+.fretboard-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fret-nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.fret-nav-btn:hover:not(:disabled) {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.fret-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 /* ── Fretboard ───────────────────────────────────────── */

@@ -1,39 +1,31 @@
 import { useState, useEffect } from 'react'
 import { DiagramState, StringState } from '../../types/chord'
 import { detectChord } from '../../utils/chordDetection'
-import { getMinFret, FRET_COUNT } from '../../utils/noteUtils'
+import { FRET_COUNT } from '../../utils/noteUtils'
 import { Fretboard } from './Fretboard'
 import { StringHeader } from './StringHeader'
 import { ChordInfo } from '../ChordInfo'
 
 const INITIAL_STATE: DiagramState = ['open', 'open', 'open', 'open', 'open', 'open']
+const MAX_FRET = 24
 
 export function ChordDiagram() {
   const [strings, setStrings] = useState<DiagramState>(INITIAL_STATE)
+  const [startFret, setStartFret] = useState(1)
   const [selectedChord, setSelectedChord] = useState<string>('')
   const [chords, setChords] = useState<string[]>([])
 
-  // Recompute chord whenever string state changes
   useEffect(() => {
     const result = detectChord(strings)
     setChords(result.chords)
     setSelectedChord(result.chords[0] ?? '')
   }, [strings])
 
-  // Calculate fretboard window: show frets startFret..startFret+FRET_COUNT-1
-  const minFret = getMinFret(strings)
-  const startFret = minFret > FRET_COUNT ? minFret : 1
-
   function handleFretClick(stringIndex: number, fret: number) {
     setStrings((prev) => {
       const next = [...prev] as DiagramState
       const current = prev[stringIndex]
-      if (typeof current === 'number' && current === fret) {
-        // Clicking the active fret clears it back to open
-        next[stringIndex] = 'open'
-      } else {
-        next[stringIndex] = fret
-      }
+      next[stringIndex] = typeof current === 'number' && current === fret ? 'open' : fret
       return next
     })
   }
@@ -41,25 +33,19 @@ export function ChordDiagram() {
   function handleHeaderToggle(stringIndex: number) {
     setStrings((prev) => {
       const next = [...prev] as DiagramState
-      const current = prev[stringIndex]
-      if (current === 'muted') {
-        next[stringIndex] = 'open'
-      } else {
-        // Any state (open or fretted) → muted when clicking header toggle
-        next[stringIndex] = 'muted'
-      }
+      next[stringIndex] = prev[stringIndex] === 'muted' ? 'open' : 'muted'
       return next
     })
   }
 
-  // For the string header, show 'open' for fretted strings (dot is on fretboard)
+  function handleReset() {
+    setStrings(INITIAL_STATE)
+    setStartFret(1)
+  }
+
   const headerStates: StringState[] = strings.map((s) =>
     typeof s === 'number' ? 'open' : s
   )
-
-  function handleReset() {
-    setStrings(INITIAL_STATE)
-  }
 
   return (
     <div className="chord-diagram">
@@ -69,11 +55,29 @@ export function ChordDiagram() {
         onSelectChord={setSelectedChord}
       />
       <StringHeader strings={headerStates} onToggle={handleHeaderToggle} />
-      <Fretboard
-        strings={strings}
-        startFret={startFret}
-        onFretClick={handleFretClick}
-      />
+      <div className="fretboard-row">
+        <button
+          className="fret-nav-btn"
+          onClick={() => setStartFret((f) => Math.max(1, f - 1))}
+          disabled={startFret === 1}
+          aria-label="Move up"
+        >
+          ▲
+        </button>
+        <Fretboard
+          strings={strings}
+          startFret={startFret}
+          onFretClick={handleFretClick}
+        />
+        <button
+          className="fret-nav-btn"
+          onClick={() => setStartFret((f) => Math.min(MAX_FRET - FRET_COUNT + 1, f + 1))}
+          disabled={startFret >= MAX_FRET - FRET_COUNT + 1}
+          aria-label="Move down"
+        >
+          ▼
+        </button>
+      </div>
       <button className="reset-button" onClick={handleReset}>
         Reset
       </button>
