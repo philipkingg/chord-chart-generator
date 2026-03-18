@@ -54,11 +54,10 @@ export function ChordDiagram({ debugMode = false, onDebugToggle }: ChordDiagramP
     localStorage.setItem(LS_FRET_KEY, String(startFret))
   }, [strings, startFret])
 
-  function handleFretClick(stringIndex: number, fret: number) {
+  function handleFretSet(stringIndex: number, fret: number, active: boolean) {
     setStrings((prev) => {
       const next = [...prev] as DiagramState
-      const current = prev[stringIndex]
-      next[stringIndex] = typeof current === 'number' && current === fret ? 'open' : fret
+      next[stringIndex] = active ? fret : 'open'
       return next
     })
   }
@@ -112,7 +111,7 @@ export function ChordDiagram({ debugMode = false, onDebugToggle }: ChordDiagramP
         <Fretboard
           strings={strings}
           startFret={startFret}
-          onFretClick={handleFretClick}
+          onFretSet={handleFretSet}
         />
         <button
           className="fret-nav-btn"

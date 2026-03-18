@@ -188,6 +188,19 @@ body {
   color: var(--text);
 }
 
+.chord-accidental {
+  font-size: 0.52em;
+  vertical-align: top;
+  line-height: 1.3;
+}
+
+.chord-quality-accidental {
+  font-size: 0.55em;
+  vertical-align: top;
+  line-height: 1.3;
+  margin-inline: -0.06em;
+}
+
 .chord-alternatives {
   display: flex;
   align-items: center;

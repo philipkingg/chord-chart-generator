@@ -1,7 +1,27 @@
+import { parseChordName, splitQuality, formatChordText } from '../utils/chordDisplay'
+
 interface ChordInfoProps {
   chords: string[]
   selectedChord: string
   onSelectChord: (chord: string) => void
+}
+
+function ChordNameDisplay({ name }: { name: string }) {
+  const { letter, accidental, quality } = parseChordName(name)
+
+  const renderedQuality = splitQuality(quality).map((part, i) =>
+    part.type === 'accidental'
+      ? <span key={i} className="chord-quality-accidental">{part.content}</span>
+      : <span key={i}>{part.content}</span>
+  )
+
+  return (
+    <>
+      {letter}
+      {accidental && <span className="chord-accidental">{accidental}</span>}
+      {renderedQuality}
+    </>
+  )
 }
 
 /**
@@ -13,7 +33,7 @@ export function ChordInfo({ chords, selectedChord, onSelectChord }: ChordInfoPro
 
   return (
     <div className="chord-info">
-      <h1 className="chord-name">{displayName}</h1>
+      <h1 className="chord-name"><ChordNameDisplay name={displayName} /></h1>
       {chords.length > 1 && (
         <div className="chord-alternatives">
           <label htmlFor="chord-select" className="chord-alt-label">
@@ -27,7 +47,7 @@ export function ChordInfo({ chords, selectedChord, onSelectChord }: ChordInfoPro
           >
             {chords.map((chord) => (
               <option key={chord} value={chord}>
-                {chord}
+                {formatChordText(chord)}
               </option>
             ))}
           </select>

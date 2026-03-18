@@ -1,18 +1,19 @@
+import { useRef, useEffect } from 'react'
 import { StringState } from '../../types/chord'
 import { FRET_COUNT } from '../../utils/noteUtils'
 
 interface FretboardProps {
   strings: StringState[]
   startFret: number
-  onFretClick: (stringIndex: number, fret: number) => void
+  onFretSet: (stringIndex: number, fret: number, active: boolean) => void
 }
 
 /**
- * SVG-based clickable fretboard grid.
+ * SVG-based clickable fretboard grid with click-and-drag support.
  * Strings run vertically (left=low E, right=high E).
  * Frets run horizontally (top=nut side).
  */
-export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
+export function Fretboard({ strings, startFret, onFretSet }: FretboardProps) {
   const STRING_COUNT = 6
   const cellWidth = 36
   const cellHeight = 44
@@ -23,6 +24,33 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
   const svgHeight = nutHeight + cellHeight * FRET_COUNT
 
   const showFretLabel = startFret > 1
+
+  const INLAY_FRETS = new Set([3, 5, 7, 9, 12, 15, 17, 19, 21, 24])
+  const DOUBLE_INLAY_FRETS = new Set([12, 24])
+  const inlayRadius = 4
+  const inlayColor = '#27272f'
+
+  // Drag state: null when not dragging, otherwise tracks whether we're activating or deactivating
+  const dragRef = useRef<{ action: 'activate' | 'deactivate' } | null>(null)
+
+  useEffect(() => {
+    const handleMouseUp = () => { dragRef.current = null }
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => document.removeEventListener('mouseup', handleMouseUp)
+  }, [])
+
+  function handleCellMouseDown(stringIndex: number, fret: number, e: React.MouseEvent) {
+    e.preventDefault()
+    const current = strings[stringIndex]
+    const isActive = typeof current === 'number' && current === fret
+    dragRef.current = { action: isActive ? 'deactivate' : 'activate' }
+    onFretSet(stringIndex, fret, !isActive)
+  }
+
+  function handleCellMouseEnter(stringIndex: number, fret: number) {
+    if (!dragRef.current) return
+    onFretSet(stringIndex, fret, dragRef.current.action === 'activate')
+  }
 
   // Compute barre bars: contiguous runs of 2+ strings at the same fret (visible in window)
   const byFret = new Map<number, number[]>()
@@ -63,9 +91,26 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
         height={svgHeight}
         className="fretboard-svg"
         aria-label="Guitar fretboard"
+        onMouseLeave={() => { dragRef.current = null }}
       >
         {/* Nut */}
         <rect x={0} y={0} width={svgWidth} height={nutHeight} fill="#c8a35e" />
+
+        {/* Inlay dots */}
+        {Array.from({ length: FRET_COUNT }, (_, fretOffset) => {
+          const fret = startFret + fretOffset
+          if (!INLAY_FRETS.has(fret)) return null
+          const cy = nutHeight + fretOffset * cellHeight + cellHeight / 2
+          if (DOUBLE_INLAY_FRETS.has(fret)) {
+            return (
+              <g key={`inlay-${fret}`}>
+                <circle cx={svgWidth / 3} cy={cy} r={inlayRadius} fill={inlayColor} />
+                <circle cx={svgWidth * 2 / 3} cy={cy} r={inlayRadius} fill={inlayColor} />
+              </g>
+            )
+          }
+          return <circle key={`inlay-${fret}`} cx={svgWidth / 2} cy={cy} r={inlayRadius} fill={inlayColor} />
+        })}
 
         {/* Fret lines */}
         {Array.from({ length: FRET_COUNT + 1 }, (_, fretIndex) => (
@@ -126,7 +171,8 @@ export function Fretboard({ strings, startFret, onFretClick }: FretboardProps) {
             return (
               <g
                 key={`cell-${stringIndex}-${fretOffset}`}
-                onClick={() => onFretClick(stringIndex, fret)}
+                onMouseDown={(e) => handleCellMouseDown(stringIndex, fret, e)}
+                onMouseEnter={() => handleCellMouseEnter(stringIndex, fret)}
                 style={{ cursor: 'pointer' }}
                 role="button"
                 aria-label={`String ${stringIndex + 1}, fret ${fret}`}
